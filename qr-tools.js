@@ -68,6 +68,13 @@
 
   document.querySelectorAll('.qrgen-preset').forEach(btn => {
     btn.addEventListener('click', () => {
+      // Presets fill the plain Content box, so force type back to "text"
+      // first — otherwise the value would land in a hidden/wrong field.
+      const typeSel = document.getElementById('qrgen-type');
+      if (typeSel.value !== 'text'){
+        typeSel.value = 'text';
+        typeSel.dispatchEvent(new Event('change'));
+      }
       textInput.value = btn.dataset.value;
       generate();
     });
@@ -92,8 +99,16 @@
   document.getElementById('qrgen-type').addEventListener('change', (e) => {
     const t = e.target.value;
     const tpl = document.getElementById('qrgen-template-fields');
+    const contentWrap = document.getElementById('qrgen-content-wrap');
     tpl.innerHTML = '';
-    if (t === 'text'){ tpl.style.display = 'none'; return; }
+    if (t === 'text'){
+      tpl.style.display = 'none';
+      contentWrap.style.display = 'block';
+      return;
+    }
+    // A structured type is selected: hide the generic Content box so there's
+    // only one field driving the QR, and show the type-specific inputs.
+    contentWrap.style.display = 'none';
     tpl.style.display = 'grid';
     const fieldsByType = {
       url: [{ id:'f-url', label:'URL', placeholder:'https://example.com' }],
