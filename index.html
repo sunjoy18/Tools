@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tools — Dev Utility Suite</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d3a4f'/%3E%3Ctext x='16' y='22' font-family='ui-monospace,Menlo,Consolas,monospace' font-size='15' font-weight='700' fill='%234fb7ff' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="tools.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">{ }</span>
+      <div><h1>Tools</h1><div class="sub">Dev utility suite</div></div>
+      <button class="sidebar-toggle" id="sidebar-toggle">Menu ▾</button>
+    </div>
+    <nav class="nav" id="nav-collapsible">
+      <div class="nav-group">
+        <div class="nav-group-label">JSON</div>
+        <button class="nav-item" data-panel="format" data-title="Format &amp; Validate" data-desc="Beautify, validate, tree view, schema, path lookup"><span class="ico">{}</span>Format &amp; Validate</button>
+        <button class="nav-item" data-panel="compare" data-title="Compare" data-desc="Structural diff between two JSON documents"><span class="ico">⇄</span>Compare</button>
+        <button class="nav-item" data-panel="export" data-title="Export" data-desc="JSON to Excel, CSV, YAML, or XML"><span class="ico">⤓</span>Export</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">QR Code</div>
+        <button class="nav-item" data-panel="qrgen" data-title="QR Generator" data-desc="Text, URL, WiFi, email, phone &amp; SMS QR codes"><span class="ico">⌷</span>Generate</button>
+        <button class="nav-item" data-panel="qrdec" data-title="QR Decoder" data-desc="Upload an image to decode a QR code"><span class="ico">⌸</span>Decode</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Convert</div>
+        <button class="nav-item" data-panel="units" data-title="Unit Converter" data-desc="Length, weight, data, speed, area, volume, temperature"><span class="ico">⇆</span>Units</button>
+        <button class="nav-item" data-panel="currency" data-title="Currency Converter" data-desc="Live exchange rates with offline fallback"><span class="ico">₹</span>Currency</button>
+        <button class="nav-item" data-panel="time" data-title="Time &amp; Timezone" data-desc="UTC ↔ IST and other zones, Unix timestamps"><span class="ico">◷</span>Time &amp; Timezone</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Encode / Decode</div>
+        <button class="nav-item" data-panel="base64" data-title="Base64" data-desc="UTF-8 safe encode &amp; decode"><span class="ico">64</span>Base64</button>
+        <button class="nav-item" data-panel="urlenc" data-title="URL Encode / Decode" data-desc="encodeURIComponent / encodeURI"><span class="ico">%</span>URL Encode</button>
+        <button class="nav-item" data-panel="jwt" data-title="JWT Decoder" data-desc="Inspect header, payload &amp; expiry — decode only, no verification"><span class="ico">⚪</span>JWT Decoder</button>
+        <button class="nav-item" data-panel="hash" data-title="Hash Generator" data-desc="MD5, SHA-1, SHA-256, SHA-512"><span class="ico">#</span>Hash Generator</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Generate</div>
+        <button class="nav-item" data-panel="uuid" data-title="UUID Generator" data-desc="Cryptographically random UUID v4"><span class="ico">⚙</span>UUID</button>
+        <button class="nav-item" data-panel="password" data-title="Password Generator" data-desc="Random passwords with entropy estimate"><span class="ico">⚿</span>Password</button>
+        <button class="nav-item" data-panel="color" data-title="Color Converter" data-desc="HEX ↔ RGB ↔ HSL"><span class="ico">●</span>Color</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Text</div>
+        <button class="nav-item" data-panel="regex" data-title="Regex Tester" data-desc="Live match highlighting &amp; capture groups"><span class="ico">.*</span>Regex Tester</button>
+        <button class="nav-item" data-panel="tdiff" data-title="Text Diff" data-desc="Line-by-line comparison for configs, logs, code"><span class="ico">±</span>Text Diff</button>
+      </div>
+    </nav>
+    <div class="sidebar-footer">Runs entirely in your browser.<br>Nothing is uploaded anywhere.</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div><h2 id="topbar-title">Tools</h2><div class="desc" id="topbar-desc"></div></div>
+      <span class="badge">client-side only</span>
+    </div>
+
+    <div class="content">
+
+      <!-- ============ FORMAT & VALIDATE ============ -->
+      <section class="tool-panel" id="panel-format">
+        <div class="toolbar">
+          <button class="btn primary" id="fmt-beautify">Beautify</button>
+          <button class="btn" id="fmt-minify">Minify</button>
+          <select class="select" id="fmt-indent"><option value="2">2 spaces</option><option value="4">4 spaces</option><option value="tab">Tab</option></select>
+          <button class="btn" id="fmt-sort">Sort keys</button>
+          <button class="btn" id="fmt-sample">Load sample</button>
+          <button class="btn subtle" id="fmt-clear">Clear</button>
+          <div class="spacer"></div>
+          <span class="hint" id="fmt-parsetime"></span>
+        </div>
+        <div class="card" id="fmt-card">
+          <div class="card-head">
+            <span class="title">Input</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="meta" id="fmt-input-size">0 B</span>
+              <button class="upload-btn" id="fmt-filebtn" type="button" title="Upload a .json file">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg>Upload
+              </button>
+              <input type="file" id="fmt-file" accept=".json,.txt,application/json" style="display:none;">
+            </div>
+          </div>
+          <textarea class="editor" id="fmt-input" placeholder="Paste JSON here, or drag a .json file onto this box…"></textarea>
+          <div class="drop-hint" id="fmt-drophint"><span>Drop a .json file anywhere on this box, or</span><button id="fmt-drophint-btn" type="button">choose a file</button></div>
+          <div style="padding:0 12px 12px 12px;"><div class="error-box" id="fmt-error"></div><div class="repair-note" id="fmt-repair-note"></div></div>
+        </div>
+        <div class="stats-row" id="fmt-stats" style="display:none;">
+          <div class="stat accent"><div class="num" id="st-size">—</div><div class="lbl">Size</div></div>
+          <div class="stat accent"><div class="num" id="st-keys">—</div><div class="lbl">Keys</div></div>
+          <div class="stat accent"><div class="num" id="st-depth">—</div><div class="lbl">Max depth</div></div>
+          <div class="stat accent"><div class="num" id="st-arrays">—</div><div class="lbl">Arrays</div></div>
+          <div class="stat accent"><div class="num" id="st-items">—</div><div class="lbl">Array items</div></div>
+        </div>
+        <div class="toolbar" style="margin-top:2px;">
+          <span class="hint" style="font-weight:600; color:var(--text-dim);">Path lookup</span>
+          <div class="query-bar" style="flex:1; margin:0;">
+            <input class="field" id="qry-path" placeholder="e.g. driver.name or vehicles[*].regNo" style="width:100%;">
+            <button class="btn" id="qry-run">Extract</button>
+            <button class="btn subtle" id="qry-clear">Clear</button>
+          </div>
+        </div>
+        <div class="card query-result" id="qry-result-card">
+          <div class="card-head"><span class="title">Extracted result</span><span class="meta" id="qry-meta"></span></div>
+          <pre class="code-out" id="qry-output"></pre>
+        </div>
+        <div class="card output-card" style="margin-top:14px;">
+          <div class="card-head">
+            <span class="title">Output</span>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button class="btn subtle" id="fmt-view-code">Code</button>
+              <button class="btn subtle" id="fmt-view-tree">Tree</button>
+              <button class="btn subtle" id="fmt-view-schema">Schema</button>
+              <button class="btn subtle" id="fmt-copy">Copy</button>
+              <button class="btn subtle" id="fmt-download">Download .json</button>
+            </div>
+          </div>
+          <pre class="code-out" id="fmt-output"><span class="p">Formatted JSON will appear here.</span></pre>
+          <div class="tree" id="fmt-tree" style="display:none;"></div>
+          <pre class="code-out" id="fmt-schema" style="display:none;"></pre>
+        </div>
+      </section>
+
+      <!-- ============ COMPARE ============ -->
+      <section class="tool-panel" id="panel-compare">
+        <div class="toolbar">
+          <button class="btn primary" id="cmp-run">Compare</button>
+          <label class="check"><input type="checkbox" id="cmp-ignore-order"> Treat arrays as unordered sets</label>
+          <label class="check"><input type="checkbox" id="cmp-ignore-case"> Ignore case in strings</label>
+          <button class="btn" id="cmp-sample">Load sample</button>
+          <button class="btn subtle" id="cmp-swap">Swap sides</button>
+          <div class="spacer"></div>
+          <button class="btn subtle" id="cmp-export" disabled>Export changes to Excel</button>
+        </div>
+        <div class="warn-box" id="cmp-warn"></div>
+        <div class="split">
+          <div class="card" id="cmp-left-card">
+            <div class="card-head"><span class="title">Left (original)</span>
+              <div style="display:flex; align-items:center; gap:10px;"><span class="meta" id="cmp-left-size">0 B</span>
+                <button class="upload-btn" id="cmp-left-filebtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg>Upload</button>
+                <input type="file" id="cmp-left-file" accept=".json,.txt,application/json" style="display:none;"></div>
+            </div>
+            <textarea class="editor" id="cmp-left" placeholder="Paste left/original JSON…" style="min-height:200px;"></textarea>
+            <div class="drop-hint" id="cmp-left-drophint"><span>Drop a file, or</span><button id="cmp-left-drophint-btn" type="button">choose a file</button></div>
+            <div style="padding:0 12px 12px 12px;"><div class="error-box" id="cmp-left-error"></div><div class="repair-note" id="cmp-left-repair-note"></div></div>
+          </div>
+          <div class="card" id="cmp-right-card">
+            <div class="card-head"><span class="title">Right (changed)</span>
+              <div style="display:flex; align-items:center; gap:10px;"><span class="meta" id="cmp-right-size">0 B</span>
+                <button class="upload-btn" id="cmp-right-filebtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg>Upload</button>
+                <input type="file" id="cmp-right-file" accept=".json,.txt,application/json" style="display:none;"></div>
+            </div>
+            <textarea class="editor" id="cmp-right" placeholder="Paste right/changed JSON…" style="min-height:200px;"></textarea>
+            <div class="drop-hint" id="cmp-right-drophint"><span>Drop a file, or</span><button id="cmp-right-drophint-btn" type="button">choose a file</button></div>
+            <div style="padding:0 12px 12px 12px;"><div class="error-box" id="cmp-right-error"></div><div class="repair-note" id="cmp-right-repair-note"></div></div>
+          </div>
+        </div>
+        <div class="stats-row" id="cmp-stats" style="display:none;">
+          <div class="stat add"><div class="num" id="cst-added">0</div><div class="lbl">Added</div></div>
+          <div class="stat remove"><div class="num" id="cst-removed">0</div><div class="lbl">Removed</div></div>
+          <div class="stat modify"><div class="num" id="cst-modified">0</div><div class="lbl">Modified</div></div>
+          <div class="stat accent"><div class="num" id="cst-unchanged">0</div><div class="lbl">Unchanged</div></div>
+        </div>
+        <div class="card" id="cmp-result-card" style="display:none;">
+          <div class="card-head"><span class="title">Diff</span><span class="meta">click a row to expand/collapse</span></div>
+          <div style="padding:10px 14px 0 14px;"><div class="legend"><div class="legend-item"><span class="legend-dot added"></span>Added</div><div class="legend-item"><span class="legend-dot removed"></span>Removed</div><div class="legend-item"><span class="legend-dot modified"></span>Modified</div></div></div>
+          <div class="difftree" id="cmp-tree"></div>
+        </div>
+      </section>
+
+      <!-- ============ EXPORT ============ -->
+      <section class="tool-panel" id="panel-export">
+        <div class="toolbar">
+          <span class="format-pills" id="xl-format-pills">
+            <button class="fpill active" data-fmt="xlsx">Excel (.xlsx)</button>
+            <button class="fpill" data-fmt="csv">CSV</button>
+            <button class="fpill" data-fmt="yaml">YAML</button>
+            <button class="fpill" data-fmt="xml">XML</button>
+          </span>
+          <div class="spacer"></div>
+          <button class="btn" id="xl-usefmt">Use JSON from Format tab</button>
+          <button class="btn" id="xl-sample">Load sample</button>
+          <button class="btn subtle" id="xl-clear">Clear</button>
+        </div>
+        <div class="card" id="xl-card">
+          <div class="card-head"><span class="title">Input</span>
+            <div style="display:flex; align-items:center; gap:10px;"><span class="meta" id="xl-input-size">0 B</span>
+              <button class="upload-btn" id="xl-filebtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg>Upload</button>
+              <input type="file" id="xl-file" accept=".json,.txt,application/json" style="display:none;"></div>
+          </div>
+          <textarea class="editor" id="xl-input" placeholder="Paste JSON here — an array of objects works best…" style="min-height:200px;"></textarea>
+          <div class="drop-hint" id="xl-drophint"><span>Drop a file, or</span><button id="xl-drophint-btn" type="button">choose a file</button></div>
+          <div style="padding:0 12px 12px 12px;"><div class="error-box" id="xl-error"></div><div class="repair-note" id="xl-repair-note"></div></div>
+        </div>
+        <div class="xl-config" id="xl-config-tabular" style="display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin:14px 0;">
+          <div><span class="field-label">Flatten nested objects</span><label class="check"><input type="checkbox" id="xl-flatten" checked> dot.notation columns</label></div>
+          <div><span class="field-label">Arrays inside rows</span><select class="select" id="xl-arraymode"><option value="join">Join as comma-separated text</option><option value="json">Keep as JSON text</option></select></div>
+          <div id="xl-sheetname-field"><span class="field-label">Sheet name</span><input class="field" id="xl-sheetname" value="Data" style="width:130px;"></div>
+        </div>
+        <div class="xl-config" id="xl-config-tree" style="display:none; gap:18px; align-items:center; margin:14px 0;">
+          <div><span class="field-label">Root element name</span><input class="field" id="xl-rootname" value="root" style="width:150px;"></div>
+        </div>
+        <div class="warn-box" id="xl-warn"></div>
+        <div class="toolbar"><button class="btn primary" id="xl-build">Build preview</button></div>
+        <div class="stats-row" id="xl-stats" style="display:none;">
+          <div class="stat accent"><div class="num" id="xst-rows">—</div><div class="lbl">Rows</div></div>
+          <div class="stat accent"><div class="num" id="xst-cols">—</div><div class="lbl">Columns</div></div>
+          <div class="stat accent"><div class="num" id="xst-sheets">—</div><div class="lbl">Sheets</div></div>
+        </div>
+        <div class="card" id="xl-preview-card" style="display:none;">
+          <div class="card-head"><span class="title">Preview <span class="hint" id="xl-preview-note"></span></span>
+            <div style="display:flex; gap:6px;"><button class="btn subtle" id="xl-copy">Copy</button><button class="btn primary" id="xl-download">Download</button></div>
+          </div>
+          <div class="preview-wrap" id="xl-preview-table-wrap"><table class="preview" id="xl-preview-table"></table></div>
+          <pre class="code-out wrap" id="xl-preview-code" style="display:none;"></pre>
+        </div>
+      </section>
+
+      <!-- ============ QR GENERATE ============ -->
+      <section class="tool-panel" id="panel-qrgen">
+        <div class="toolbar">
+          <span class="field-label" style="margin:0;">Type</span>
+          <select class="select" id="qrgen-type"><option value="text">Plain text / any</option><option value="url">URL</option><option value="wifi">WiFi</option><option value="email">Email</option><option value="tel">Phone</option><option value="sms">SMS</option></select>
+        </div>
+        <div class="qr-layout">
+          <div class="card">
+            <div class="card-body">
+              <span class="field-label">Content</span>
+              <textarea class="editor" id="qrgen-text" style="min-height:100px;" placeholder="Type or paste text, a URL, anything…"></textarea>
+              <div id="qrgen-template-fields" style="display:none; gap:10px; margin-top:10px;"></div>
+              <div class="error-box" id="qrgen-error" style="margin-top:10px;"></div>
+              <div class="toolbar" style="margin-top:14px;">
+                <button class="btn subtle qrgen-preset" data-value="https://claude.ai">claude.ai</button>
+                <button class="btn subtle qrgen-preset" data-value="tel:+919876543210">Sample phone</button>
+                <button class="btn subtle qrgen-preset" data-value="WIFI:T:WPA;S:MyWiFi;P:password123;;">Sample WiFi</button>
+              </div>
+              <div class="toolbar" style="margin-top:10px;">
+                <div><span class="field-label">Size</span><select class="select" id="qrgen-size"><option value="256">256px</option><option value="512" selected>512px (recommended)</option><option value="1024">1024px</option></select></div>
+                <div><span class="field-label">Error correction</span><select class="select" id="qrgen-ecc"><option value="L">L — 7%</option><option value="M" selected>M — 15%</option><option value="Q">Q — 25%</option><option value="H">H — 30%</option></select></div>
+                <div><span class="field-label">Dark color</span><input class="field" type="color" id="qrgen-dark" value="#000000"></div>
+                <div><span class="field-label">Light color</span><input class="field" type="color" id="qrgen-light" value="#ffffff"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="qr-preview">
+              <canvas id="qrgen-canvas" style="display:none;"></canvas>
+              <div id="qrgen-placeholder" class="hint" style="display:flex;">Type something to generate a QR code</div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn primary" id="qrgen-download" disabled>Download PNG</button>
+                <button class="btn subtle" id="qrgen-copy-img">Copy image</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ QR DECODE ============ -->
+      <section class="tool-panel" id="panel-qrdec">
+        <div class="card">
+          <div class="card-body">
+            <div class="qr-drop" id="qrdec-drop">
+              <div>Drop a QR code image here, or click to choose a file</div>
+              <input type="file" id="qrdec-file" accept="image/*">
+            </div>
+            <div id="qrdec-reader" style="display:none;"></div>
+            <img id="qrdec-img" class="qr-decoded-img" style="display:none;">
+            <div class="error-box" id="qrdec-error" style="margin-top:12px;"></div>
+            <div class="card query-result show" id="qrdec-result" style="display:none; margin-top:12px;">
+              <div class="card-head"><span class="title">Decoded text</span></div>
+              <pre class="code-out wrap" id="qrdec-text"></pre>
+              <div class="toolbar" style="padding:0 12px 12px 12px; margin:0;" id="qrdec-actions"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ UNITS ============ -->
+      <section class="tool-panel" id="panel-units">
+        <div class="toolbar">
+          <span class="field-label" style="margin:0;">Category</span>
+          <select class="select" id="unit-group">
+            <option value="length">Length</option><option value="weight">Weight</option><option value="temperature">Temperature</option>
+            <option value="data">Data storage</option><option value="speed">Speed</option><option value="area">Area</option><option value="volume">Volume</option>
+          </select>
+        </div>
+        <div class="conv-row">
+          <div class="conv-box"><span class="field-label">From</span><select class="select unit-select" id="unit-from"></select><input class="big" id="unit-from-val" type="number" value="1"></div>
+          <button class="conv-swap" id="unit-swap">⇄</button>
+          <div class="conv-box"><span class="field-label">To</span><select class="select unit-select" id="unit-to"></select><input class="big" id="unit-to-val" type="number"></div>
+        </div>
+      </section>
+
+      <!-- ============ CURRENCY ============ -->
+      <section class="tool-panel" id="panel-currency">
+        <div class="conv-row">
+          <div class="conv-box"><span class="field-label">From</span><select class="select unit-select" id="cur-from"></select><input class="big" id="cur-amount" type="number" value="1"></div>
+          <button class="conv-swap" id="cur-swap">⇄</button>
+          <div class="conv-box"><span class="field-label">To</span><select class="select unit-select" id="cur-to"></select><div class="big" id="cur-result">—</div></div>
+        </div>
+        <div class="hint" id="cur-status"></div>
+      </section>
+
+      <!-- ============ TIME & TIMEZONE ============ -->
+      <section class="tool-panel" id="panel-time">
+        <div class="toolbar">
+          <div><span class="field-label">Date &amp; time</span><input class="field" type="datetime-local" id="tz-datetime"></div>
+          <div><span class="field-label">In timezone</span><select class="select" id="tz-source"></select></div>
+          <button class="btn subtle" id="tz-now">Now</button>
+          <div class="spacer"></div>
+          <div><span class="field-label">Unix timestamp</span><input class="field" id="tz-unix" style="width:140px;"></div>
+        </div>
+        <div class="toolbar">
+          <select class="select" id="tz-add"></select>
+          <button class="btn" id="tz-add-btn">Add timezone card</button>
+        </div>
+        <div class="tz-grid" id="tz-cards"></div>
+      </section>
+
+      <!-- ============ BASE64 ============ -->
+      <section class="tool-panel" id="panel-base64">
+        <div class="toolbar">
+          <button class="btn primary" id="b64-encode">Encode</button>
+          <button class="btn" id="b64-decode">Decode</button>
+          <button class="btn subtle" id="b64-swap">Use output as input</button>
+          <button class="btn subtle" id="b64-clear">Clear</button>
+        </div>
+        <div class="split">
+          <div class="card"><div class="card-head"><span class="title">Input</span></div><textarea class="editor" id="b64-input" style="min-height:200px;"></textarea></div>
+          <div class="card"><div class="card-head"><span class="title">Output</span><button class="btn subtle" id="b64-copy">Copy</button></div><textarea class="editor" id="b64-output" style="min-height:200px;" readonly></textarea></div>
+        </div>
+        <div class="error-box" id="b64-error"></div>
+      </section>
+
+      <!-- ============ URL ENCODE ============ -->
+      <section class="tool-panel" id="panel-urlenc">
+        <div class="toolbar">
+          <button class="btn primary" id="url-encode">Encode</button>
+          <button class="btn" id="url-decode">Decode</button>
+          <select class="select" id="url-mode"><option value="component">Component (encodeURIComponent)</option><option value="full">Full URI (encodeURI)</option></select>
+          <button class="btn subtle" id="url-swap">Use output as input</button>
+          <button class="btn subtle" id="url-clear">Clear</button>
+        </div>
+        <div class="split">
+          <div class="card"><div class="card-head"><span class="title">Input</span></div><textarea class="editor" id="url-input" style="min-height:200px;"></textarea></div>
+          <div class="card"><div class="card-head"><span class="title">Output</span><button class="btn subtle" id="url-copy">Copy</button></div><textarea class="editor" id="url-output" style="min-height:200px;" readonly></textarea></div>
+        </div>
+        <div class="error-box" id="url-error"></div>
+      </section>
+
+      <!-- ============ JWT ============ -->
+      <section class="tool-panel" id="panel-jwt">
+        <div class="toolbar">
+          <button class="btn" id="jwt-sample">Load sample token</button>
+          <button class="btn subtle" id="jwt-clear">Clear</button>
+          <div class="spacer"></div>
+          <span class="hint">Decodes only — signature is not verified</span>
+        </div>
+        <div class="card"><div class="card-head"><span class="title">Token</span></div><textarea class="editor" id="jwt-input" style="min-height:90px;" placeholder="Paste a JWT (header.payload.signature)…"></textarea></div>
+        <div class="error-box" id="jwt-error" style="margin-top:10px;"></div>
+        <div class="jwt-parts" style="margin-top:14px;">
+          <div class="card"><div class="card-head"><div class="jwt-part-head"><span class="jwt-dot header"></span><span class="title">Header</span></div></div><pre class="code-out" id="jwt-header"></pre></div>
+          <div class="card"><div class="card-head"><div class="jwt-part-head"><span class="jwt-dot payload"></span><span class="title">Payload</span></div><span class="hint" id="jwt-exp-info"></span></div><pre class="code-out" id="jwt-payload"></pre></div>
+          <div class="card"><div class="card-head"><div class="jwt-part-head"><span class="jwt-dot sig"></span><span class="title">Signature (raw, base64url)</span></div></div><pre class="code-out wrap" id="jwt-sig"></pre></div>
+        </div>
+      </section>
+
+      <!-- ============ HASH ============ -->
+      <section class="tool-panel" id="panel-hash">
+        <div class="card"><div class="card-head"><span class="title">Input</span><button class="btn subtle" id="hash-clear">Clear</button></div><textarea class="editor" id="hash-input" style="min-height:120px;" placeholder="Type or paste text to hash…"></textarea></div>
+        <div style="margin-top:14px;">
+          <div class="hash-row"><span class="hl">MD5</span><code id="hash-md5"></code><button class="btn subtle" data-hash-copy="hash-md5">Copy</button></div>
+          <div class="hash-row"><span class="hl">SHA-1</span><code id="hash-sha1"></code><button class="btn subtle" data-hash-copy="hash-sha1">Copy</button></div>
+          <div class="hash-row"><span class="hl">SHA-256</span><code id="hash-sha256"></code><button class="btn subtle" data-hash-copy="hash-sha256">Copy</button></div>
+          <div class="hash-row"><span class="hl">SHA-512</span><code id="hash-sha512"></code><button class="btn subtle" data-hash-copy="hash-sha512">Copy</button></div>
+        </div>
+      </section>
+
+      <!-- ============ UUID ============ -->
+      <section class="tool-panel" id="panel-uuid">
+        <div class="toolbar">
+          <div><span class="field-label">Count</span><select class="select" id="uuid-count"><option>1</option><option>5</option><option>10</option><option>25</option><option>50</option></select></div>
+          <label class="check"><input type="checkbox" id="uuid-hyphens" checked> Hyphens</label>
+          <label class="check"><input type="checkbox" id="uuid-upper"> Uppercase</label>
+          <button class="btn primary" id="uuid-generate">Generate</button>
+          <button class="btn subtle" id="uuid-copy-all">Copy all</button>
+        </div>
+        <div class="uuid-list" id="uuid-list"></div>
+      </section>
+
+      <!-- ============ PASSWORD ============ -->
+      <section class="tool-panel" id="panel-password">
+        <div class="card"><div class="card-body">
+          <div class="password-display" id="pwd-display"></div>
+          <div class="strength-bar"><div class="fill" id="pwd-strength-fill" style="width:0%;"></div></div>
+          <div class="hint" id="pwd-strength-label"></div>
+          <div class="toolbar" style="margin-top:16px;">
+            <span class="field-label" style="margin:0;">Length: <span id="pwd-length-val">16</span></span>
+            <input type="range" id="pwd-length" min="6" max="64" value="16" style="flex:1;">
+          </div>
+          <div class="toolbar">
+            <label class="check"><input type="checkbox" id="pwd-upper" checked> Uppercase</label>
+            <label class="check"><input type="checkbox" id="pwd-lower" checked> Lowercase</label>
+            <label class="check"><input type="checkbox" id="pwd-digits" checked> Digits</label>
+            <label class="check"><input type="checkbox" id="pwd-symbols"> Symbols</label>
+          </div>
+          <div class="toolbar" style="margin-top:10px;"><button class="btn primary" id="pwd-generate">Regenerate</button><button class="btn subtle" id="pwd-copy">Copy</button></div>
+        </div></div>
+      </section>
+
+      <!-- ============ COLOR ============ -->
+      <section class="tool-panel" id="panel-color">
+        <div class="card"><div class="card-body">
+          <div class="color-swatch" id="color-swatch"></div>
+          <div class="color-formats">
+            <div class="color-format-row"><span class="cf-label">HEX</span><input id="color-hex" value="#4fb7ff"><input type="color" id="color-picker" value="#4fb7ff" style="width:32px;height:28px;padding:0;border:none;background:none;"><button class="btn subtle" data-color-copy="color-hex">Copy</button></div>
+            <div class="color-format-row"><span class="cf-label">RGB</span><input id="color-rgb"><button class="btn subtle" data-color-copy="color-rgb">Copy</button></div>
+            <div class="color-format-row"><span class="cf-label">HSL</span><input id="color-hsl"><button class="btn subtle" data-color-copy="color-hsl">Copy</button></div>
+          </div>
+        </div></div>
+      </section>
+
+      <!-- ============ REGEX ============ -->
+      <section class="tool-panel" id="panel-regex">
+        <div class="toolbar"><button class="btn" id="regex-sample">Load sample (email matcher)</button></div>
+        <div class="card"><div class="card-head"><span class="title">Pattern</span><span class="hint" id="regex-count"></span></div>
+          <div style="padding:12px;"><input class="field mono" id="regex-pattern" style="width:100%;" placeholder="e.g. \\b[\\w.+-]+@[\\w-]+\\.[\\w.-]+\\b">
+            <div class="regex-flags" id="regex-flags">
+              <label class="check"><input type="checkbox" value="g" checked disabled> g (always on)</label>
+              <label class="check"><input type="checkbox" value="i"> i (ignore case)</label>
+              <label class="check"><input type="checkbox" value="m"> m (multiline)</label>
+              <label class="check"><input type="checkbox" value="s"> s (dotAll)</label>
+            </div>
+          </div>
+        </div>
+        <div class="error-box" id="regex-error" style="margin-top:10px;"></div>
+        <div class="card" style="margin-top:14px;"><div class="card-head"><span class="title">Test text</span></div><textarea class="editor" id="regex-test" style="min-height:120px;" placeholder="Paste text to test against your pattern…"></textarea></div>
+        <div style="margin-top:14px;" id="regex-results"></div>
+      </section>
+
+      <!-- ============ TEXT DIFF ============ -->
+      <section class="tool-panel" id="panel-tdiff">
+        <div class="toolbar">
+          <button class="btn" id="tdiff-sample">Load sample</button>
+          <button class="btn subtle" id="tdiff-clear">Clear</button>
+          <div class="spacer"></div>
+          <span class="hint" id="tdiff-stats"></span>
+        </div>
+        <div class="warn-box" id="tdiff-warn"></div>
+        <div class="split">
+          <div class="card"><div class="card-head"><span class="title">Original</span></div><textarea class="editor" id="tdiff-left" style="min-height:200px;"></textarea></div>
+          <div class="card"><div class="card-head"><span class="title">Changed</span></div><textarea class="editor" id="tdiff-right" style="min-height:200px;"></textarea></div>
+        </div>
+        <div class="card" style="margin-top:14px;"><div class="card-head"><span class="title">Diff</span></div><div id="tdiff-output" style="max-height:500px; overflow:auto;"></div></div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script src="core.js"></script>
+<script src="json-tools.js"></script>
+<script src="qr-tools.js"></script>
+<script src="convert-tools.js"></script>
+<script src="dev-tools.js"></script>
+</body>
+</html>
