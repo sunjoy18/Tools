@@ -195,11 +195,16 @@
           renderDecodedActions(decodedText);
         })
         .catch(err => {
-          errorBox.textContent = 'Could not find or decode a QR code in that image.';
+          // Surface the real reason instead of a canned message — this is
+          // what actually tells us (and the browser console) what failed.
+          const reason = (err && err.message) ? err.message : String(err);
+          console.error('QR decode failed:', err);
+          errorBox.textContent = 'Could not decode: ' + reason;
           errorBox.classList.add('show');
         })
         .finally(() => { try{ scanner.clear(); } catch(e){} });
     } catch(e){
+      console.error('QR decoder threw synchronously:', e);
       errorBox.textContent = 'Decoder error: ' + e.message;
       errorBox.classList.add('show');
     }
