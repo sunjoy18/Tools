@@ -147,20 +147,51 @@
   const cardsWrap = document.getElementById('tz-cards');
   const unixInput = document.getElementById('tz-unix');
   const nowBtn = document.getElementById('tz-now');
+  const pasteInput = document.getElementById('tz-paste');
+  const pasteError = document.getElementById('tz-paste-error');
 
   const COMMON_ZONES = [
     'UTC','Asia/Kolkata','America/New_York','America/Los_Angeles','America/Chicago',
     'Europe/London','Europe/Berlin','Europe/Paris','Asia/Tokyo','Asia/Shanghai',
     'Asia/Singapore','Asia/Dubai','Australia/Sydney','Pacific/Auckland','Asia/Karachi'
   ];
-  let activeZones = ['UTC','Asia/Kolkata','America/New_York'];
+  // Default focus: UTC -> IST, with a couple of other common zones on hand.
+  let activeZones = ['Asia/Kolkata','UTC','America/New_York'];
+
+  // When the paste field holds a valid, parsed instant, it takes priority
+  // over the manual date/timezone/unix fields (which become secondary).
+  let pastedInstant = null;
 
   function populateZoneSelects(){
     [sourceZoneSel, addZoneSel].forEach(sel => {
       sel.innerHTML = '';
       COMMON_ZONES.forEach(z => sel.appendChild(new Option(z, z)));
     });
-    sourceZoneSel.value = 'Asia/Kolkata';
+    sourceZoneSel.value = 'UTC';
+  }
+
+  function showPasteError(msg){
+    pasteError.textContent = msg;
+    pasteError.classList.toggle('show', !!msg);
+    pasteInput.style.borderColor = msg ? 'rgba(240,96,90,0.6)' : '';
+  }
+
+  // Accepts ISO 8601 ("2026-08-08T05:49:45.000Z"), "YYYY-MM-DD HH:MM:SS",
+  // RFC 2822, and raw epoch seconds/milliseconds.
+  function parsePasted(raw){
+    const str = (raw || '').trim();
+    if (!str) return null;
+    if (/^-?\d+$/.test(str)){
+      const n = parseInt(str, 10);
+      const ms = Math.abs(n) > 1e12 ? n : n * 1000;
+      const d = new Date(ms);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    let d = new Date(str);
+    if (!isNaN(d.getTime())) return d;
+    d = new Date(str.replace(' ', 'T'));
+    if (!isNaN(d.getTime())) return d;
+    return null;
   }
 
   function formatInZone(date, timeZone){
@@ -187,8 +218,12 @@
     return new Date(naive.getTime() - offsetMinutes*60000);
   }
 
+  function getInstant(){
+    return pastedInstant || getSourceDate();
+  }
+
   function render(){
-    const instant = getSourceDate();
+    const instant = getInstant();
     unixInput.value = Math.floor(instant.getTime()/1000);
     cardsWrap.innerHTML = '';
     activeZones.forEach(zone => {
@@ -206,8 +241,33 @@
     });
   }
 
-  dtInput.addEventListener('input', render);
-  sourceZoneSel.addEventListener('change', render);
+  // --- Primary: paste field ---
+  pasteInput.addEventListener('input', () => {
+    const val = pasteInput.value;
+    if (!val.trim()){
+      pastedInstant = null;
+      showPasteError('');
+      render();
+      return;
+    }
+    const d = parsePasted(val);
+    if (d){
+      pastedInstant = d;
+      showPasteError('');
+      // Keep the manual fields in sync (as UTC) so they stay useful as a fallback.
+      const utcLocal = formatInZone(d, 'UTC');
+      sourceZoneSel.value = 'UTC';
+      dtInput.value = utcLocal.date + 'T' + utcLocal.time.slice(0,5);
+      render();
+    } else {
+      showPasteError('Couldn\u2019t parse that \u2014 try an ISO format like 2026-08-08T05:49:45.000Z, or a Unix timestamp.');
+    }
+  });
+
+  // --- Secondary: manual date/timezone/unix fields ---
+  // Editing any of these clears the pasted value so manual entry takes over.
+  dtInput.addEventListener('input', () => { pastedInstant = null; pasteInput.value = ''; showPasteError(''); render(); });
+  sourceZoneSel.addEventListener('change', () => { pastedInstant = null; pasteInput.value = ''; showPasteError(''); render(); });
   addZoneBtn.addEventListener('click', () => {
     const z = addZoneSel.value;
     if (!activeZones.includes(z)) activeZones.push(z);
@@ -219,18 +279,24 @@
     const d = new Date(sec*1000);
     const local = formatInZone(d, sourceZoneSel.value);
     dtInput.value = local.date + 'T' + local.time.slice(0,5);
+    pastedInstant = null;
+    pasteInput.value = '';
+    showPasteError('');
     render();
   });
   nowBtn.addEventListener('click', () => {
     const now = new Date();
     const local = formatInZone(now, sourceZoneSel.value);
     dtInput.value = local.date + 'T' + local.time.slice(0,5);
+    pastedInstant = null;
+    pasteInput.value = '';
+    showPasteError('');
     render();
   });
 
   populateZoneSelects();
   const now = new Date();
-  const localNow = formatInZone(now, 'Asia/Kolkata');
+  const localNow = formatInZone(now, 'UTC');
   dtInput.value = localNow.date + 'T' + localNow.time.slice(0,5);
   render();
 })();
