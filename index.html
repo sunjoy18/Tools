@@ -312,14 +312,24 @@
 
       <!-- ============ TIME & TIMEZONE ============ -->
       <section class="tool-panel" id="panel-time">
-        <div class="toolbar">
-          <div><span class="field-label">Date &amp; time</span><input class="field" type="datetime-local" id="tz-datetime"></div>
-          <div><span class="field-label">In timezone</span><select class="select" id="tz-source"></select></div>
-          <button class="btn subtle" id="tz-now">Now</button>
-          <div class="spacer"></div>
-          <div><span class="field-label">Unix timestamp</span><input class="field" id="tz-unix" style="width:140px;"></div>
+        <div class="toolbar" style="align-items:flex-start;">
+          <div style="flex:1; min-width:280px;">
+            <span class="field-label">Paste a date &amp; time (ISO 8601, UTC, epoch, or almost any format)</span>
+            <input class="field" type="text" id="tz-paste" style="width:100%;" placeholder="e.g. 2026-08-08T05:49:45.000Z" autocomplete="off" spellcheck="false">
+          </div>
+          <button class="btn subtle" id="tz-now" style="margin-top:20px;">Now</button>
         </div>
-        <div class="toolbar">
+        <div class="error-box" id="tz-paste-error" style="margin-top:6px;"></div>
+        <details class="tz-manual" style="margin-top:14px;">
+          <summary class="hint" style="cursor:pointer; user-select:none;">Or pick date/time and timezone manually</summary>
+          <div class="toolbar" style="margin-top:10px;">
+            <div><span class="field-label">Date &amp; time</span><input class="field" type="datetime-local" id="tz-datetime"></div>
+            <div><span class="field-label">In timezone</span><select class="select" id="tz-source"></select></div>
+            <div class="spacer"></div>
+            <div><span class="field-label">Unix timestamp</span><input class="field" id="tz-unix" style="width:140px;"></div>
+          </div>
+        </details>
+        <div class="toolbar" style="margin-top:14px;">
           <select class="select" id="tz-add"></select>
           <button class="btn" id="tz-add-btn">Add timezone card</button>
         </div>
