@@ -489,3 +489,160 @@ async function sha(str, algo){
   document.getElementById('tdiff-clear').addEventListener('click', () => { leftEl.value=''; rightEl.value=''; run(); });
   run();
 })();
+
+/* ================= HTTP REQUEST (small curl-like tool) ================= */
+(function(){
+  const methodSel = document.getElementById('http-method');
+  if (!methodSel) return;
+  const urlInput = document.getElementById('http-url');
+  const headersWrap = document.getElementById('http-headers');
+  const addHeaderBtn = document.getElementById('http-add-header');
+  const bodyInput = document.getElementById('http-body');
+  const sendBtn = document.getElementById('http-send');
+  const errorBox = document.getElementById('http-error');
+  const responseCard = document.getElementById('http-response-card');
+  const responseMeta = document.getElementById('http-response-meta');
+  const responseHeadersEl = document.getElementById('http-response-headers');
+  const responseBodyEl = document.getElementById('http-response-body');
+  const copyCurlBtn = document.getElementById('http-copy-curl');
+  const pasteToggleBtn = document.getElementById('http-paste-curl-toggle');
+  const pasteCard = document.getElementById('http-paste-curl-card');
+  const pasteInput = document.getElementById('http-paste-curl');
+  const parseCurlBtn = document.getElementById('http-parse-curl');
+
+  function addHeaderRow(key, value){
+    const row = document.createElement('div');
+    row.className = 'toolbar';
+    row.style.margin = '0 0 8px 0';
+    row.innerHTML = `<input class="field" placeholder="Header" style="flex:1;" value="${escapeHtml(key||'')}">
+      <input class="field" placeholder="Value" style="flex:1;" value="${escapeHtml(value||'')}">
+      <button class="btn subtle" type="button" title="Remove">\u2715</button>`;
+    row.querySelector('button').addEventListener('click', () => row.remove());
+    headersWrap.appendChild(row);
+  }
+  function getHeaders(){
+    return Array.from(headersWrap.querySelectorAll('.toolbar')).map(row => {
+      const [keyEl, valEl] = row.querySelectorAll('input');
+      return { key: keyEl.value.trim(), value: valEl.value };
+    }).filter(h => h.key);
+  }
+  addHeaderBtn.addEventListener('click', () => addHeaderRow());
+  addHeaderRow('Content-Type', 'application/json');
+
+  function buildCurl(){
+    const method = methodSel.value, url = urlInput.value.trim(), headers = getHeaders(), body = bodyInput.value;
+    let cmd = 'curl -X ' + method + " '" + url + "'";
+    headers.forEach(h => { cmd += " \\\n  -H '" + h.key + ': ' + h.value + "'"; });
+    if (body.trim() && !['GET','HEAD'].includes(method)) cmd += " \\\n  -d '" + body.replace(/'/g, "'\\''") + "'";
+    return cmd;
+  }
+  function parseCurl(text){
+    text = text.trim().replace(/\\\r?\n/g, ' ');
+    let method = 'GET', url = '', body = '';
+    const headers = [];
+    const tokens = [];
+    let cur = '', quote = null;
+    for (let i=0;i<text.length;i++){
+      const c = text[i];
+      if (quote){ if (c === quote){ quote = null; } else cur += c; }
+      else if (c === '"' || c === "'"){ quote = c; }
+      else if (/\s/.test(c)){ if (cur){ tokens.push(cur); cur=''; } }
+      else cur += c;
+    }
+    if (cur) tokens.push(cur);
+    for (let i=0;i<tokens.length;i++){
+      const t = tokens[i];
+      if (t === 'curl') continue;
+      if (t === '-X' || t === '--request'){ method = tokens[++i]; }
+      else if (t === '-H' || t === '--header'){
+        const h = tokens[++i]; const idx = h.indexOf(':');
+        if (idx > -1) headers.push({ key: h.slice(0,idx).trim(), value: h.slice(idx+1).trim() });
+      }
+      else if (t === '-d' || t === '--data' || t === '--data-raw' || t === '--data-binary'){
+        body = tokens[++i];
+        if (method === 'GET') method = 'POST';
+      }
+      else if (t.startsWith('-')) { /* skip unrecognized flags (-L, --location, etc.) */ }
+      else if (!url) url = t;
+    }
+    return { method, url, headers, body };
+  }
+
+  copyCurlBtn.addEventListener('click', () => {
+    if (!urlInput.value.trim()){ errorBox.textContent = 'Enter a URL first.'; errorBox.classList.add('show'); return; }
+    errorBox.classList.remove('show');
+    copyToClipboard(buildCurl(), 'http-copy-curl');
+  });
+  pasteToggleBtn.addEventListener('click', () => {
+    pasteCard.style.display = pasteCard.style.display === 'none' ? 'block' : 'none';
+  });
+  parseCurlBtn.addEventListener('click', () => {
+    const parsed = parseCurl(pasteInput.value);
+    if (!parsed.url){ errorBox.textContent = 'Could not find a URL in that curl command.'; errorBox.classList.add('show'); return; }
+    errorBox.classList.remove('show');
+    methodSel.value = parsed.method;
+    urlInput.value = parsed.url;
+    bodyInput.value = parsed.body;
+    headersWrap.innerHTML = '';
+    (parsed.headers.length ? parsed.headers : [{key:'Content-Type', value:'application/json'}]).forEach(h => addHeaderRow(h.key, h.value));
+    pasteCard.style.display = 'none';
+  });
+
+  sendBtn.addEventListener('click', async () => {
+    errorBox.classList.remove('show');
+    responseCard.style.display = 'none';
+    const url = urlInput.value.trim();
+    if (!url){ errorBox.textContent = 'Enter a URL first.'; errorBox.classList.add('show'); return; }
+    const method = methodSel.value;
+    const headers = {};
+    getHeaders().forEach(h => headers[h.key] = h.value);
+    const opts = { method, headers };
+    if (bodyInput.value.trim() && !['GET','HEAD'].includes(method)) opts.body = bodyInput.value;
+
+    const originalLabel = sendBtn.textContent;
+    sendBtn.textContent = 'Sending…'; sendBtn.disabled = true;
+    const t0 = performance.now();
+    try{
+      const res = await fetch(url, opts);
+      const elapsed = Math.round(performance.now() - t0);
+      const text = await res.text();
+      const sizeBytes = byteLength(text);
+
+      responseMeta.innerHTML = '';
+      const statusSpan = document.createElement('span');
+      statusSpan.style.fontWeight = '700';
+      statusSpan.style.color = res.ok ? 'var(--add)' : 'var(--remove)';
+      statusSpan.textContent = res.status + ' ' + res.statusText;
+      responseMeta.appendChild(statusSpan);
+      responseMeta.appendChild(document.createTextNode('  \u00B7  ' + elapsed + ' ms  \u00B7  ' + formatBytes(sizeBytes)));
+
+      responseHeadersEl.innerHTML = '';
+      const hdrList = [];
+      res.headers.forEach((v,k) => hdrList.push(k + ': ' + v));
+      if (hdrList.length){
+        const pre = document.createElement('pre');
+        pre.className = 'code-out wrap';
+        pre.style.maxHeight = '140px';
+        pre.textContent = hdrList.join('\n');
+        responseHeadersEl.appendChild(pre);
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('json') || /^[\s]*[{\[]/.test(text)){
+        try{
+          const pretty = JSON.stringify(JSON.parse(text), null, 2);
+          responseBodyEl.innerHTML = window.__fmtHighlight ? window.__fmtHighlight(pretty) : escapeHtml(pretty);
+        } catch(e){ responseBodyEl.textContent = text; }
+      } else {
+        responseBodyEl.textContent = text;
+      }
+      responseCard.style.display = 'flex';
+    } catch(e){
+      errorBox.innerHTML = '<div class="err-msg"><span class="warn-ico">\u26A0\uFE0F</span><span>Request failed: ' + escapeHtml(e.message) +
+        '. This is almost always the browser blocking a cross-origin request that lacks CORS headers on the server \u2014 use \u201CCopy as curl\u201D and run it from a terminal instead.</span></div>';
+      errorBox.classList.add('show');
+    } finally {
+      sendBtn.textContent = originalLabel; sendBtn.disabled = false;
+    }
+  });
+})();
