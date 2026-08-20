@@ -171,7 +171,7 @@
 
   function handleFile(file){
     errorBox.classList.remove('show');
-    resultBox.classList.remove('show');
+    resultBox.style.display = 'none';
     if (!file.type.startsWith('image/')){
       errorBox.textContent = 'That file doesn\u2019t look like an image.';
       errorBox.classList.add('show');
@@ -191,7 +191,7 @@
       scanner.scanFile(file, false)
         .then(decodedText => {
           resultText.textContent = decodedText;
-          resultBox.classList.add('show');
+          resultBox.style.display = 'flex';
           renderDecodedActions(decodedText);
         })
         .catch(err => {
