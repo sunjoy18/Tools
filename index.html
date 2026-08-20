@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tools - Dev Utility Suite</title>
+<title>Tools — Dev Utility Suite</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d3a4f'/%3E%3Ctext x='16' y='22' font-family='ui-monospace,Menlo,Consolas,monospace' font-size='15' font-weight='700' fill='%234fb7ff' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="tools.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -509,7 +509,11 @@
         <div class="card" id="http-paste-curl-card" style="display:none; margin-top:0 0 12px 0;">
           <div class="card-body">
             <textarea class="editor mono" id="http-paste-curl" style="min-height:80px;" placeholder="curl -X POST 'https://api.example.com/x' -H 'Content-Type: application/json' -d '{&quot;a&quot;:1}'"></textarea>
-            <div class="toolbar" style="margin-top:8px;"><button class="btn primary" id="http-parse-curl">Fill fields from this</button></div>
+            <div class="toolbar" style="margin-top:8px;">
+              <button class="btn" id="http-parse-curl">Fill fields</button>
+              <button class="btn primary" id="http-send-curl">Fill &amp; Send</button>
+              <span class="hint">or press ⌘/Ctrl + Enter in the box above</span>
+            </div>
           </div>
         </div>
 
