@@ -16,6 +16,7 @@
     speed: { units:{ 'm/s':1, 'km/h':1/3.6, mph:0.44704, knot:0.514444, 'ft/s':0.3048 } },
     area: { units:{ m2:1, km2:1e6, ha:10000, ft2:0.09290304, acre:4046.8564224, mi2:2589988.110336 } },
     volume: { units:{ L:1, mL:0.001, m3:1000, gal:3.785411784, qt:0.946352946, pt:0.473176473, cup:0.2365882365 } },
+    time: { units:{ ms:0.001, s:1, min:60, hr:3600, day:86400, week:604800, month:2629800, year:31557600 } },
     temperature: { special: true }
   };
 
