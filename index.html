@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tools — Dev Utility Suite</title>
+<title>Tools - Dev Utility Suite</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d3a4f'/%3E%3Ctext x='16' y='22' font-family='ui-monospace,Menlo,Consolas,monospace' font-size='15' font-weight='700' fill='%234fb7ff' text-anchor='middle'%3E%7B%7D%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="tools.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -49,6 +49,10 @@
         <button class="nav-item" data-panel="uuid" data-title="UUID Generator" data-desc="Cryptographically random UUID v4"><span class="ico">⚙</span>UUID</button>
         <button class="nav-item" data-panel="password" data-title="Password Generator" data-desc="Random passwords with entropy estimate"><span class="ico">⚿</span>Password</button>
         <button class="nav-item" data-panel="color" data-title="Color Converter" data-desc="HEX ↔ RGB ↔ HSL"><span class="ico">●</span>Color</button>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">API</div>
+        <button class="nav-item" data-panel="http" data-title="HTTP Request" data-desc="Send a request from the browser, or paste/copy as curl"><span class="ico">↯</span>HTTP Request</button>
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Text</div>
@@ -277,7 +281,7 @@
             <div id="qrdec-reader" style="position:absolute; width:1px; height:1px; overflow:hidden; left:-9999px;"></div>
             <img id="qrdec-img" class="qr-decoded-img" style="display:none;">
             <div class="error-box" id="qrdec-error" style="margin-top:12px;"></div>
-            <div class="card query-result show" id="qrdec-result" style="display:none; margin-top:12px;">
+            <div class="card" id="qrdec-result" style="display:none; margin-top:12px;">
               <div class="card-head"><span class="title">Decoded text</span></div>
               <pre class="code-out wrap" id="qrdec-text"></pre>
               <div class="toolbar" style="padding:0 12px 12px 12px; margin:0;" id="qrdec-actions"></div>
@@ -291,7 +295,7 @@
         <div class="toolbar">
           <span class="field-label" style="margin:0;">Category</span>
           <select class="select" id="unit-group">
-            <option value="length">Length</option><option value="weight">Weight</option><option value="temperature">Temperature</option>
+            <option value="length">Length</option><option value="time">Time</option><option value="weight">Weight</option><option value="temperature">Temperature</option>
             <option value="data">Data storage</option><option value="speed">Speed</option><option value="area">Area</option><option value="volume">Volume</option>
           </select>
         </div>
@@ -473,6 +477,54 @@
           <div class="card"><div class="card-head"><span class="title">Changed</span></div><textarea class="editor" id="tdiff-right" style="min-height:200px;"></textarea></div>
         </div>
         <div class="card" style="margin-top:14px;"><div class="card-head"><span class="title">Diff</span></div><div id="tdiff-output" style="max-height:500px; overflow:auto;"></div></div>
+      </section>
+
+      <!-- ============ HTTP REQUEST ============ -->
+      <section class="tool-panel" id="panel-http">
+        <div class="info-box show">Requests are sent directly from your browser (no proxy). Sites without permissive CORS headers will block the response — that's the browser enforcing security, not a bug here. For those, use the "Copy as curl" button and run it from a terminal instead.</div>
+
+        <div class="toolbar">
+          <select class="select" id="http-method" style="width:100px;">
+            <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>HEAD</option>
+          </select>
+          <input class="field mono" id="http-url" style="flex:1;" placeholder="https://api.example.com/v1/fleet/FL-2026-041">
+          <button class="btn primary" id="http-send">Send</button>
+        </div>
+
+        <div class="split" style="grid-template-columns: 1fr 1fr; margin-top:12px;">
+          <div class="card">
+            <div class="card-head"><span class="title">Headers</span><button class="btn subtle" id="http-add-header">+ Add header</button></div>
+            <div class="card-body" id="http-headers"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><span class="title">Body</span><span class="hint">for POST / PUT / PATCH</span></div>
+            <textarea class="editor" id="http-body" style="min-height:120px;" placeholder='{"key": "value"}'></textarea>
+          </div>
+        </div>
+
+        <div class="toolbar" style="margin-top:12px;">
+          <button class="btn subtle" id="http-copy-curl">Copy as curl</button>
+          <button class="btn subtle" id="http-paste-curl-toggle">Paste a curl command instead</button>
+        </div>
+        <div class="card" id="http-paste-curl-card" style="display:none; margin-top:0 0 12px 0;">
+          <div class="card-body">
+            <textarea class="editor mono" id="http-paste-curl" style="min-height:80px;" placeholder="curl -X POST 'https://api.example.com/x' -H 'Content-Type: application/json' -d '{&quot;a&quot;:1}'"></textarea>
+            <div class="toolbar" style="margin-top:8px;"><button class="btn primary" id="http-parse-curl">Fill fields from this</button></div>
+          </div>
+        </div>
+
+        <div class="error-box" id="http-error" style="margin-top:12px;"></div>
+
+        <div class="card" id="http-response-card" style="display:none; margin-top:14px;">
+          <div class="card-head">
+            <span class="title">Response</span>
+            <span class="hint" id="http-response-meta"></span>
+          </div>
+          <div class="card-body" style="padding-bottom:0;">
+            <div id="http-response-headers" style="margin-bottom:10px;"></div>
+          </div>
+          <pre class="code-out wrap" id="http-response-body"></pre>
+        </div>
       </section>
 
     </div>
