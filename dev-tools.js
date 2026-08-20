@@ -509,6 +509,7 @@ async function sha(str, algo){
   const pasteCard = document.getElementById('http-paste-curl-card');
   const pasteInput = document.getElementById('http-paste-curl');
   const parseCurlBtn = document.getElementById('http-parse-curl');
+  const sendCurlBtn = document.getElementById('http-send-curl');
 
   function addHeaderRow(key, value){
     const row = document.createElement('div');
@@ -576,19 +577,30 @@ async function sha(str, algo){
   pasteToggleBtn.addEventListener('click', () => {
     pasteCard.style.display = pasteCard.style.display === 'none' ? 'block' : 'none';
   });
-  parseCurlBtn.addEventListener('click', () => {
+
+  function fillFieldsFromCurl(){
     const parsed = parseCurl(pasteInput.value);
-    if (!parsed.url){ errorBox.textContent = 'Could not find a URL in that curl command.'; errorBox.classList.add('show'); return; }
+    if (!parsed.url){ errorBox.textContent = 'Could not find a URL in that curl command.'; errorBox.classList.add('show'); return false; }
     errorBox.classList.remove('show');
     methodSel.value = parsed.method;
     urlInput.value = parsed.url;
     bodyInput.value = parsed.body;
     headersWrap.innerHTML = '';
     (parsed.headers.length ? parsed.headers : [{key:'Content-Type', value:'application/json'}]).forEach(h => addHeaderRow(h.key, h.value));
-    pasteCard.style.display = 'none';
+    return true;
+  }
+
+  parseCurlBtn.addEventListener('click', () => {
+    if (fillFieldsFromCurl()) pasteCard.style.display = 'none';
+  });
+  sendCurlBtn.addEventListener('click', () => {
+    if (fillFieldsFromCurl()){ pasteCard.style.display = 'none'; sendRequest(); }
+  });
+  pasteInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) sendCurlBtn.click();
   });
 
-  sendBtn.addEventListener('click', async () => {
+  async function sendRequest(){
     errorBox.classList.remove('show');
     responseCard.style.display = 'none';
     const url = urlInput.value.trim();
@@ -600,7 +612,7 @@ async function sha(str, algo){
     if (bodyInput.value.trim() && !['GET','HEAD'].includes(method)) opts.body = bodyInput.value;
 
     const originalLabel = sendBtn.textContent;
-    sendBtn.textContent = 'Sending…'; sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending\u2026'; sendBtn.disabled = true;
     const t0 = performance.now();
     try{
       const res = await fetch(url, opts);
@@ -644,5 +656,7 @@ async function sha(str, algo){
     } finally {
       sendBtn.textContent = originalLabel; sendBtn.disabled = false;
     }
-  });
+  }
+
+  sendBtn.addEventListener('click', sendRequest);
 })();
