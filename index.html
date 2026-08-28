@@ -55,6 +55,10 @@
         <button class="nav-item" data-panel="http" data-title="HTTP Request" data-desc="Send a request from the browser, or paste/copy as curl"><span class="ico">↯</span>HTTP Request</button>
       </div>
       <div class="nav-group">
+        <div class="nav-group-label">Document</div>
+        <button class="nav-item" data-panel="mdpdf" data-title="Markdown → PDF" data-desc="Live preview, export as PDF, HTML, or .md"><span class="ico">⇩</span>Markdown → PDF</button>
+      </div>
+      <div class="nav-group">
         <div class="nav-group-label">Text</div>
         <button class="nav-item" data-panel="regex" data-title="Regex Tester" data-desc="Live match highlighting &amp; capture groups"><span class="ico">.*</span>Regex Tester</button>
         <button class="nav-item" data-panel="tdiff" data-title="Text Diff" data-desc="Line-by-line comparison for configs, logs, code"><span class="ico">±</span>Text Diff</button>
@@ -531,14 +535,46 @@
         </div>
       </section>
 
+      <!-- ============ MARKDOWN -> PDF ============ -->
+      <section class="tool-panel" id="panel-mdpdf">
+        <div class="toolbar">
+          <button class="btn" id="mdpdf-sample">Load sample</button>
+          <button class="upload-btn" id="mdpdf-filebtn" type="button" title="Upload a .md file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 17v2a2 2 0 002 2h10a2 2 0 002-2v-2"/></svg>Upload .md
+          </button>
+          <input type="file" id="mdpdf-file" accept=".md,.markdown,text/markdown,text/plain" style="display:none;">
+          <button class="btn subtle" id="mdpdf-clear">Clear</button>
+          <div class="spacer"></div>
+          <button class="btn subtle" id="mdpdf-download-md">Download .md</button>
+          <button class="btn subtle" id="mdpdf-download-html">Download .html</button>
+          <button class="btn primary" id="mdpdf-download-pdf">Download PDF</button>
+        </div>
+        <div class="info-box show">"Download PDF" opens your browser's print dialog with only the rendered document showing — choose "Save as PDF" as the destination. This uses your browser's own PDF engine, so formatting matches exactly what you see in the preview.</div>
+        <div class="split">
+          <div class="card">
+            <div class="card-head"><span class="title">Markdown</span><span class="meta" id="mdpdf-size">0 B</span></div>
+            <textarea class="editor mono" id="mdpdf-input" style="min-height:480px;" placeholder="# Heading&#10;&#10;Type or paste Markdown here, or upload a .md file…"></textarea>
+          </div>
+          <div class="card">
+            <div class="card-head"><span class="title">Preview</span></div>
+            <div id="mdpdf-preview-wrap" style="max-height:520px; overflow:auto; background:#fff;">
+              <div id="mdpdf-preview" class="md-preview"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/18.0.10/lib/marked.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.4.14/purify.min.js"></script>
 <script src="core.js"></script>
 <script src="json-tools.js"></script>
 <script src="qr-tools.js"></script>
 <script src="convert-tools.js"></script>
+<script src="md-tools.js"></script>
 <script src="dev-tools.js"></script>
 </body>
 </html>
